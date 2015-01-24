@@ -6,5 +6,5 @@ ADD package.json /app/
 RUN npm install
 ADD . /app
 
-EXPOSE 80
+EXPOSE 25565
 CMD coffee source/app.coffee
