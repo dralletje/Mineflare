@@ -1,0 +1,28 @@
+{
+  "name": "Mineflare",
+  "version": "0.0.1",
+  "description": "Minecraft proxy server.",
+  "main": "index.js",
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git@bitbucket.org:Dralletje/guide.git"
+  },
+  "keywords": [
+    "minecraft",
+    "proxy",
+    "CDN",
+    "Cloudflare"
+  ],
+  "author": "Michiel Dral <m.c.dral@gmail.com>",
+  "license": "BSD-2-Clause",
+  "dependencies": {
+    "bluebird": "~1.0.1",
+    "debug": "^2.1.1",
+    "js-yaml": "~3.0.1",
+    "sequelize": "~1.7.0-rc3",
+    "varint": "~1.0.0"
+  }
+}
