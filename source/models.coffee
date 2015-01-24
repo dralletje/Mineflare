@@ -7,7 +7,7 @@ _ = require 'lodash'
 ###
 
 module.exports = (mysql) ->
-  sequelize = new Sequelize mysql.database, mysql.user, mysql.password
+  sequelize = new Sequelize mysql.database, mysql.user, mysql.password, mysql # Other options like 'host'
 
   ## Mysql models
   Server = sequelize.define 'Server',
