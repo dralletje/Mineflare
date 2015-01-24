@@ -4,9 +4,9 @@ Promise = require 'bluebird'
 #getServer = require './lib/getServer'
 debug = require('debug')('mineflare')
 
-fs = require 'fs'
-yaml = require('js-yaml').safeLoad
-{sequelize, Server} = require('./models')(yaml fs.readFileSync '../config.yml')
+# Load models from config
+config = require('js-yaml').safeLoad require('fs').readFileSync('./config.yml').toString()
+{sequelize, Server} = require('./models')(config.mysql)
 
 ###
 Extending the prototypes :o
