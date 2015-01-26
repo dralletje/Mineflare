@@ -6,7 +6,15 @@ debug = require('debug')('mineflare')
 
 # Load models from config
 config = require('js-yaml').safeLoad require('fs').readFileSync('./config.yml').toString()
-{sequelize, Server} = require('./models')(config.mysql)
+getmyip = require './getip'
+
+if not config.etcd?
+  console.error 'No `etcd` section in config found!'
+  process.exit()
+
+Etcd = require 'node-etcd'
+Promise.promisifyAll(Etcd.prototype)
+etcd = new Etcd(config.etcd.host, config.etcd.port)
 
 ###
 Extending the prototypes :o
@@ -21,7 +29,7 @@ wait = (emitter, event) ->
 suck = (stream) ->
   wait(stream, 'readable').then ->
     data = stream.read()
-    if not data? then throw new Error 'hey'
+    if not data? then return
     data
 
 
@@ -54,7 +62,7 @@ net.createServer (client) ->
   client.on 'error', (e) ->
     if e.code is 'EPIPE'
       return # Other end has closed the connection
-    console.log 'Error in minecraft handling:', e
+    console.log 'Error in minecraft handling:', e.stack
 
   suck(client).then (data) ->
     client.handshake = data
@@ -67,27 +75,38 @@ net.createServer (client) ->
     client.state = state
 
     host = host.toLowerCase()
-    #getServer host, Models
-    Server.find where: name: host
+    etcd.getAsync '/minecraft/'+host
 
   .then (to) ->
-    if not to?
-      kick client, "No server at this address!", 404
-    else
-      server = net.createConnection(to.port, to.host)
+    [host, port] = to[0].node.value.split ':'
+    server = net.createConnection(port or 25565, host)
 
-      server.on 'error', (e) ->
-        kick client, "Server has an error", 502
+    server.on 'error', (e) ->
+      kick client, "Server has an error", 502
 
-      server.write client.handshake
-      client.pipe(server).pipe(client)
+    server.write client.handshake
+    client.pipe(server).pipe(client)
 
   .catch (err) ->
-    debug '== ERROR =='
-    console.log 'Ssst (minecraft.coffee):', err.stack
-    kick client, 'ZOMBIE APOCALYPSE!!!', 500
+    if err.cause?.errorCode is 100
+      debug 'Server not found!'
+      kick client, "No server at this address!", 404
+    else
+      console.error '== ERROR =='
+      console.error err.stack
+      kick client, 'ZOMBIE APOCALYPSE!!!', 500
 
 .on 'error', (e) ->
-  console.log 'Error in Minecraft.coffee:', e.stack
+  console.error 'Error in Minecraft.coffee:', e.stack
 
-.listen 25565
+.listen 25565, ->
+  # Set server to available in the central DB
+  getmyip().then (me) ->
+    jsonme = JSON.stringify(me)
+    ttl = 10
+    update = ->
+      etcd.set "/proxy/"+me.ip, jsonme, ttl: ttl
+
+    update()
+    # Update 5 seconds before ttl ends
+    setInterval update, (ttl - 5) * 1000

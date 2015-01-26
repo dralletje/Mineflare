@@ -1,5 +1,2 @@
-mysql:
+etcd:
   host: localhost
-  user: Mineflare
-  database: Mineflare
-  password: LUGsyMutvQUBykX3KHZDdNqV
