@@ -94,6 +94,7 @@ net.createServer (client) ->
     else
       console.error '== ERROR =='
       console.error err.stack
+      console.error err
       kick client, 'ZOMBIE APOCALYPSE!!!', 500
 
 .on 'error', (e) ->
