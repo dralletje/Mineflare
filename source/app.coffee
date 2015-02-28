@@ -33,6 +33,8 @@ suck = (stream) ->
     data
 
 
+class BreakError extends Error then constructor: -> super
+
 ###
 Dragoman!
 ###
@@ -66,7 +68,7 @@ net.createServer (client) ->
 
   suck(client).then (data) ->
     client.handshake = data
-    [version, host, port, state] = packets.handshake.extract data
+    [version, host, port, state] = lowl = packets.handshake.extract(data, false)
 
     if not version?
       throw new Error 'Bad Package! Require handshake! ' + old.toString()
@@ -76,6 +78,11 @@ net.createServer (client) ->
 
     host = host.toLowerCase()
     etcd.getAsync '/minecraft/'+host
+
+  .catch -> # Etcd returns error
+    kick client, "Backend not functioning >.>"
+    console.error '> Etcd not responding!!'
+    throw new BreakError
 
   .then (to) ->
     [host, port] = to[0].node.value.split ':'
@@ -88,14 +95,22 @@ net.createServer (client) ->
     client.pipe(server).pipe(client)
 
   .catch (err) ->
+    if err instanceof BreakError
+      console.log 'Breakerror :-D'
+      return
+
     if err.cause?.errorCode is 100
       debug 'Server not found!'
       kick client, "No server at this address!", 404
+
+    if err.message is 'All servers returned error'
+
+
     else
       console.error '== ERROR =='
       console.error err.stack
       console.error err
-      kick client, 'ZOMBIE APOCALYPSE!!!', 500
+      #kick client, 'ZOMBIE APOCALYPSE!!!', 500
 
 .on 'error', (e) ->
   console.error 'Error in Minecraft.coffee:', e.stack
