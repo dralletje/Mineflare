@@ -32,12 +32,10 @@ suck = (stream) ->
     if not data? then return
     data
 
+## Removed breakerror in favour of beter errorhandling
+#class BreakError extends Error then constructor: -> super
 
-class BreakError extends Error then constructor: -> super
-
-###
-Dragoman!
-###
+# Dragoman!
 Dragoman = require 'dragoman'
 protocol = require './minecraft-interface'
 
@@ -54,6 +52,13 @@ kick = (client, message, code=500) ->
       		protocol: 5
       	description:
       		text: message
+
+# Error predicates
+Key_not_found_error = (e) ->
+  e.message is 'Key not found'
+
+Server_unavailable_error = (e) ->
+  e.message is 'All servers returned error'
 
 ###
 Actual server
@@ -79,11 +84,6 @@ net.createServer (client) ->
     host = host.toLowerCase()
     etcd.getAsync '/minecraft/'+host
 
-  .catch -> # Etcd returns error
-    kick client, "Backend not functioning >.>"
-    console.error '> Etcd not responding!!'
-    throw new BreakError
-
   .then (to) ->
     [host, port] = to[0].node.value.split ':'
     server = net.createConnection(port or 25565, host)
@@ -94,23 +94,20 @@ net.createServer (client) ->
     server.write client.handshake
     client.pipe(server).pipe(client)
 
+  # Error handling
+  .catch Key_not_found_error, ->
+    debug 'Server not found!'
+    kick client, "No server at this address!", 404
+
+  .catch Server_unavailable_error, ->
+    debug 'Proxies not functioning!'
+    kick client, "Proxies overloaded, sorry", 502
+
   .catch (err) ->
-    if err instanceof BreakError
-      console.log 'Breakerror :-D'
-      return
-
-    if err.cause?.errorCode is 100
-      debug 'Server not found!'
-      kick client, "No server at this address!", 404
-
-    if err.message is 'All servers returned error'
-
-
-    else
-      console.error '== ERROR =='
-      console.error err.stack
-      console.error err
-      #kick client, 'ZOMBIE APOCALYPSE!!!', 500
+    console.error '== ERROR =='
+    console.error err.stack
+    console.error err
+    kick client, 'ZOMBIE APOCALYPSE!!!', 500
 
 .on 'error', (e) ->
   console.error 'Error in Minecraft.coffee:', e.stack
