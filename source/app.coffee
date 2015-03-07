@@ -81,10 +81,11 @@ net.createServer (client) ->
     client.state = state
 
     host = host.toLowerCase()
-    etcd.getAsync '/minecraft/'+host
+    etcd.getAsync('/minecraft/'+host).then (result) ->
+      result[0].node.value
 
   .then (to) ->
-    [host, port] = to[0].node.value.split ':'
+    [host, port] = to.split ':'
     server = net.createConnection(port or 25565, host)
 
     server.on 'error', (e) ->
