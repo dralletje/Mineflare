@@ -89,10 +89,11 @@ net.createServer (client) ->
     server = net.createConnection(port or 25565, host)
 
     server.on 'error', (e) ->
-      kick client, "Server has an error", 502
+      kick client, "Server is offline", 502
 
     delimiter = "|"
     client.handshake[1] = client.handshake[1] + delimiter + client.address().address
+    console.log 'Going to send:', client.handshake[1]
     data = packets.handshake.build client.handshake
 
     server.write data
@@ -106,6 +107,9 @@ net.createServer (client) ->
     kick client, "Proxies overloaded, sorry", 502
 
   .catch (err) ->
+    kick client, 'Protocol error!', 400
+    return
+
     console.error '== ERROR =='
     console.error err.stack
     console.error err
