@@ -44,14 +44,16 @@ packets = dragoman.compile protocol
 
 kick = (client, message, code=500) ->
   client.end if client.state is 2
-      packets.kick.build(JSON.stringify text: "#{message} (#{code})")
+      packets.kick.build [JSON.stringify text: "#{message} (#{code})"]
     else
-      packets.status.build JSON.stringify
-      	version:
-      		name: "ERR #{code}"
-      		protocol: 5
-      	description:
-      		text: message
+      packets.status.build [
+        JSON.stringify
+        	version:
+        		name: "ERR #{code}"
+        		protocol: 5
+        	description:
+        		text: message
+      ]
 
 # Error predicates
 Key_not_found_error = (e) ->
@@ -72,8 +74,8 @@ net.createServer (client) ->
     console.log 'Error in minecraft handling:', e.stack
 
   suck(client).then (data) ->
-    client.handshake = data
-    [version, host, port, state] = lowl = packets.handshake.extract(data, false)
+    [version, host, port, state] = packet = packets.handshake.extract(data, false)
+    client.handshake = packet
 
     if not version?
       throw new Error 'Bad Package! Require handshake! ' + old.toString()
@@ -91,7 +93,11 @@ net.createServer (client) ->
     server.on 'error', (e) ->
       kick client, "Server has an error", 502
 
-    server.write client.handshake
+    delimiter = "|"
+    client.handshake[1] = client.handshake[1] + delimiter + client.address().address
+    data = packets.handshake.build client.handshake
+
+    server.write data
     client.pipe(server).pipe(client)
 
   # Error handling
