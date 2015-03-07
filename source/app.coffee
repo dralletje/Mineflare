@@ -2,7 +2,7 @@ net = require 'net'
 Promise = require 'bluebird'
 
 #getServer = require './lib/getServer'
-debug = require('debug')('mineflare')
+#debug = require('debug')('mineflare')
 
 # Load models from config
 config = require('js-yaml').safeLoad require('fs').readFileSync('./config.yml').toString()
@@ -66,8 +66,6 @@ Server_unavailable_error = (e) ->
 Actual server
 ###
 net.createServer (client) ->
-  debug 'Client connection!'
-
   client.on 'error', (e) ->
     if e.code is 'EPIPE'
       return # Other end has closed the connection
@@ -80,7 +78,6 @@ net.createServer (client) ->
     if not version?
       throw new Error 'Bad Package! Require handshake! ' + old.toString()
 
-    debug 'state:', (if state is 1 then 'Pingin\'' else 'Playing')
     client.state = state
 
     host = host.toLowerCase()
@@ -102,11 +99,9 @@ net.createServer (client) ->
 
   # Error handling
   .catch Key_not_found_error, ->
-    debug 'Server not found!'
     kick client, "No server at this address!", 404
 
   .catch Server_unavailable_error, ->
-    debug 'Proxies not functioning!'
     kick client, "Proxies overloaded, sorry", 502
 
   .catch (err) ->
