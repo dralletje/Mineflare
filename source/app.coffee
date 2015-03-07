@@ -92,7 +92,7 @@ net.createServer (client) ->
       kick client, "Server is offline", 502
 
     delimiter = "|"
-    client.handshake[1] = client.handshake[1] + delimiter + client.address().address
+    client.handshake[1] = client.handshake[1] + delimiter + client.remoteAddress
     console.log 'Going to send:', client.handshake[1]
     data = packets.handshake.build client.handshake
 
