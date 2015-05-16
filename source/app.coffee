@@ -91,9 +91,15 @@ net.createServer (client) ->
     server.on 'error', (e) ->
       kick client, "Server is offline", 502
 
+    #nullbyte = new Buffer([0])
     delimiter = "|"
+    ###client.handshake[1] = client.handshake[1] + delimiter + client.remoteAddress
+      + nullbyte + client.remoteAddress
+      + nullbyte + ###
+
     client.handshake[1] = client.handshake[1] + delimiter + client.remoteAddress
     console.log 'Going to send:', client.handshake[1]
+
     data = packets.handshake.build client.handshake
 
     server.write data
